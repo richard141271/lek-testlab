@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="no">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b1020" />
+    <title>LEK TestLab</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand__title">🛡️ LEK TestLab</div>
+          <div class="brand__subtitle">Automatisk kvalitetssikring for LEK-Biens Vokter™</div>
+        </div>
+
+        <div class="topbar__actions">
+          <a class="btn btn--ghost" href="reports/playwright-report/index.html" target="_blank" rel="noreferrer">Åpne rapport</a>
+          <button class="btn" id="refreshBtn" type="button">Oppdater</button>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="cards" aria-label="Status">
+          <article class="card card--ok">
+            <div class="card__label">✅ Tester bestått</div>
+            <div class="card__value" id="passedCount">0</div>
+          </article>
+
+          <article class="card card--critical">
+            <div class="card__label">❌ Feilede tester</div>
+            <div class="card__value" id="failedCount">0</div>
+          </article>
+
+          <article class="card card--warn">
+            <div class="card__label">⚠️ Advarsler</div>
+            <div class="card__value" id="warningCount">0</div>
+          </article>
+
+          <article class="card">
+            <div class="card__label">🕒 Siste kjøring</div>
+            <div class="card__value card__value--time" id="lastRun">—</div>
+          </article>
+        </section>
+
+        <section class="panel" aria-label="Tester">
+          <div class="panel__header">
+            <div class="panel__title">Testliste</div>
+            <div class="panel__meta" id="runMeta">—</div>
+          </div>
+
+          <div class="table" role="table" aria-label="Testresultater">
+            <div class="table__row table__row--head" role="row">
+              <div class="table__cell" role="columnheader">Test</div>
+              <div class="table__cell" role="columnheader">Status</div>
+              <div class="table__cell" role="columnheader">Siste kjøretid</div>
+              <div class="table__cell" role="columnheader">Responstid</div>
+              <div class="table__cell" role="columnheader">Feil</div>
+            </div>
+            <div id="testRows"></div>
+          </div>
+        </section>
+
+        <section class="panel panel--details" aria-label="Feildetaljer">
+          <div class="panel__header">
+            <div class="panel__title">Feilvisning</div>
+            <div class="panel__meta" id="detailsMeta">Trykk på en feilet test for detaljer</div>
+          </div>
+
+          <div class="errorcard" id="errorCard" hidden>
+            <div class="errorcard__top">
+              <div class="errorcard__title" id="errorTitle">—</div>
+              <div class="statuspill statuspill--critical" id="errorStatus">CRITICAL</div>
+            </div>
+            <div class="errorcard__meta" id="errorTime">—</div>
+            <div class="errorcard__body">
+              <div class="errorcard__message" id="errorMessage">—</div>
+              <div class="errorcard__shotwrap">
+                <img class="errorcard__shot" id="errorShot" alt="Screenshot ved feil" loading="lazy" />
+              </div>
+            </div>
+          </div>
+
+          <div class="empty" id="errorEmpty">
+            <div class="empty__title">Ingen valgt feil</div>
+            <div class="empty__subtitle">Velg en test med status FAIL for å se screenshot og feilmelding.</div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <div class="footer__left">LEK TestLab • MVP</div>
+        <div class="footer__right">
+          <a class="link" href="reports/results.json" target="_blank" rel="noreferrer">results.json</a>
+        </div>
+      </footer>
+    </div>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>

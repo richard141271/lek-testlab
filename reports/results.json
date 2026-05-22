@@ -1,0 +1,450 @@
+{
+  "config": {
+    "configFile": "/Users/jornsmackbookpro/Documents/trae_projects/lek-testlab/playwright.config.js",
+    "rootDir": "/Users/jornsmackbookpro/Documents/trae_projects/lek-testlab/tests",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 6
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/jornsmackbookpro/Documents/trae_projects/lek-testlab/screenshots",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 6
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/jornsmackbookpro/Documents/trae_projects/lek-testlab/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "outputFolder": "reports/playwright-report",
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "reports/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 6,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "admin.spec.js",
+      "file": "admin.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Admin: admin-side åpnes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "Sett BASE_URL (f.eks. repository variable) for å kjøre app-testene.",
+                  "location": {
+                    "file": "/Users/jornsmackbookpro/Documents/trae_projects/lek-testlab/tests/testlab.js",
+                    "line": 21,
+                    "column": 13
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "skipped",
+                  "duration": 56,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-05-22T02:18:16.856Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Sett BASE_URL (f.eks. repository variable) for å kjøre app-testene.",
+                      "location": {
+                        "file": "/Users/jornsmackbookpro/Documents/trae_projects/lek-testlab/tests/testlab.js",
+                        "line": 21,
+                        "column": 13
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "73482573f1568b679d78-85d9b741cad4a77e05eb",
+          "file": "admin.spec.js",
+          "line": 3,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "dashboard.spec.js",
+      "file": "dashboard.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Dashboard: dashboard lastes og viktige kort finnes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "Sett BASE_URL (f.eks. repository variable) for å kjøre app-testene.",
+                  "location": {
+                    "file": "/Users/jornsmackbookpro/Documents/trae_projects/lek-testlab/tests/testlab.js",
+                    "line": 21,
+                    "column": 13
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "skipped",
+                  "duration": 59,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-05-22T02:18:16.855Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Sett BASE_URL (f.eks. repository variable) for å kjøre app-testene.",
+                      "location": {
+                        "file": "/Users/jornsmackbookpro/Documents/trae_projects/lek-testlab/tests/testlab.js",
+                        "line": 21,
+                        "column": 13
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "a1bb41a2bd6df77ed2f7-0d0c9411405061fef925",
+          "file": "dashboard.spec.js",
+          "line": 3,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "feedback.spec.js",
+      "file": "feedback.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Feedback: feedbackside åpnes og skjema kan sendes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "Sett BASE_URL (f.eks. repository variable) for å kjøre app-testene.",
+                  "location": {
+                    "file": "/Users/jornsmackbookpro/Documents/trae_projects/lek-testlab/tests/testlab.js",
+                    "line": 21,
+                    "column": 13
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "skipped",
+                  "duration": 60,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-05-22T02:18:16.840Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Sett BASE_URL (f.eks. repository variable) for å kjøre app-testene.",
+                      "location": {
+                        "file": "/Users/jornsmackbookpro/Documents/trae_projects/lek-testlab/tests/testlab.js",
+                        "line": 21,
+                        "column": 13
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "7874fc00bf6a439b55ff-2db605900f4319ebafd8",
+          "file": "feedback.spec.js",
+          "line": 3,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "login.spec.js",
+      "file": "login.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Login: åpne LEK, logg inn, bekreft dashboard lastet",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "Sett BASE_URL (f.eks. repository variable) for å kjøre app-testene.",
+                  "location": {
+                    "file": "/Users/jornsmackbookpro/Documents/trae_projects/lek-testlab/tests/testlab.js",
+                    "line": 21,
+                    "column": 13
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "skipped",
+                  "duration": 59,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-05-22T02:18:16.857Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Sett BASE_URL (f.eks. repository variable) for å kjøre app-testene.",
+                      "location": {
+                        "file": "/Users/jornsmackbookpro/Documents/trae_projects/lek-testlab/tests/testlab.js",
+                        "line": 21,
+                        "column": 13
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "badc1754af1944f68b2b-062b744ef908278d0b89",
+          "file": "login.spec.js",
+          "line": 3,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "offline.spec.js",
+      "file": "offline.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Offline: app kan åpnes offline og cache fungerer",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "Sett BASE_URL (f.eks. repository variable) for å kjøre app-testene.",
+                  "location": {
+                    "file": "/Users/jornsmackbookpro/Documents/trae_projects/lek-testlab/tests/testlab.js",
+                    "line": 21,
+                    "column": 13
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 4,
+                  "status": "skipped",
+                  "duration": 61,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-05-22T02:18:16.857Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Sett BASE_URL (f.eks. repository variable) for å kjøre app-testene.",
+                      "location": {
+                        "file": "/Users/jornsmackbookpro/Documents/trae_projects/lek-testlab/tests/testlab.js",
+                        "line": 21,
+                        "column": 13
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "170c7452e9c121637e46-81bb0447f435f1817170",
+          "file": "offline.spec.js",
+          "line": 3,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "scanner.spec.js",
+      "file": "scanner.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Scanner: scanner-side åpnes og scanner-knapp finnes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "Sett BASE_URL (f.eks. repository variable) for å kjøre app-testene.",
+                  "location": {
+                    "file": "/Users/jornsmackbookpro/Documents/trae_projects/lek-testlab/tests/testlab.js",
+                    "line": 21,
+                    "column": 13
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 5,
+                  "status": "skipped",
+                  "duration": 59,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-05-22T02:18:16.858Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Sett BASE_URL (f.eks. repository variable) for å kjøre app-testene.",
+                      "location": {
+                        "file": "/Users/jornsmackbookpro/Documents/trae_projects/lek-testlab/tests/testlab.js",
+                        "line": 21,
+                        "column": 13
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "094475e80d166c75a6a9-27142d23bc8833dd4b7d",
+          "file": "scanner.spec.js",
+          "line": 3,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-05-22T02:18:16.556Z",
+    "duration": 2644.1040000000003,
+    "expected": 0,
+    "skipped": 6,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

@@ -1,0 +1,79 @@
+name: LEK TestLab
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm install
+
+      - name: Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run tests
+        env:
+          BASE_URL: ${{ vars.BASE_URL }}
+          LEK_EMAIL: ${{ secrets.LEK_EMAIL }}
+          LEK_PASSWORD: ${{ secrets.LEK_PASSWORD }}
+        run: npm test
+
+      - name: Prepare Pages
+        if: always()
+        run: |
+          mkdir -p public
+          cp index.html style.css app.js manifest.webmanifest sw.js favicon.svg public/
+          if [ -d reports ]; then cp -R reports public/reports; fi
+          if [ -d screenshots ]; then cp -R screenshots public/screenshots; fi
+
+      - name: Upload Pages artifact
+        if: always()
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lek-testlab-artifacts
+          path: |
+            reports
+            screenshots
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
