@@ -1,11 +1,7 @@
-const { test, expect, requireBaseUrl, gotoAndMeasure } = require('./testlab');
+const { test, expect, ensureOnPage } = require('./testlab');
 
 test('Feedback: feedbackside åpnes og skjema kan sendes', async ({ page }, testInfo) => {
-  requireBaseUrl(testInfo);
-
-  const base = process.env.BASE_URL;
-  const url = new URL('/feedback', base).toString();
-  await gotoAndMeasure(page, testInfo, url);
+  await ensureOnPage(page, testInfo, '/feedback');
 
   const form = page.locator('form').first();
   await expect(form).toBeVisible();
@@ -28,7 +24,5 @@ test('Feedback: feedbackside åpnes og skjema kan sendes', async ({ page }, test
 
   await page.waitForTimeout(600);
   const success = page.locator('text=/takk|sendt|mottatt|submitted/i').first();
-  if (await success.isVisible().catch(() => false)) {
-    await expect(success).toBeVisible();
-  }
+  if (await success.isVisible().catch(() => false)) await expect(success).toBeVisible();
 });

@@ -1,18 +1,21 @@
-const { test, expect, requireBaseUrl, gotoAndMeasure } = require('./testlab');
+const { test, expect, ensureOnPage, loginIfNeeded } = require('./testlab');
 
 test('Offline: app kan åpnes offline og cache fungerer', async ({ page }, testInfo) => {
-  requireBaseUrl(testInfo);
+  await ensureOnPage(page, testInfo, '/dashboard');
 
-  const base = process.env.BASE_URL;
-  const url = new URL('/dashboard', base).toString();
-  await gotoAndMeasure(page, testInfo, url);
-
+  await page.waitForFunction(() => 'serviceWorker' in navigator, null, { timeout: 10_000 }).catch(() => {});
   await page.evaluate(async () => {
     if (!('serviceWorker' in navigator)) return;
     try {
       await navigator.serviceWorker.ready;
     } catch {}
   });
+
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await loginIfNeeded(page, testInfo);
+  await page
+    .waitForFunction(() => navigator.serviceWorker?.controller != null, null, { timeout: 10_000 })
+    .catch(() => {});
 
   const ctx = page.context();
   await ctx.setOffline(true);

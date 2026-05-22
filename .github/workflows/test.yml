@@ -2,7 +2,7 @@ name: LEK TestLab
 
 on:
   push:
-    branches: [main]
+    branches: [main, staging, production]
   pull_request:
   schedule:
     - cron: "0 3 * * *"
@@ -36,9 +36,25 @@ jobs:
       - name: Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      - name: Resolve BASE_URL
+        shell: bash
+        run: |
+          ref="${{ github.ref_name }}"
+          base="${{ vars.BASE_URL }}"
+          prod="${{ vars.PROD_BASE_URL }}"
+          if [ -n "$base" ]; then
+            echo "BASE_URL=$base" >> "$GITHUB_ENV"
+          elif [ "$ref" = "production" ] && [ -n "$prod" ]; then
+            echo "BASE_URL=$prod" >> "$GITHUB_ENV"
+          elif [ "$ref" = "production" ] && [ -z "$prod" ]; then
+            echo "BASE_URL=https://lekbie.no" >> "$GITHUB_ENV"
+          else
+            echo "BASE_URL=https://staging.lekbie.no" >> "$GITHUB_ENV"
+          fi
+
       - name: Run tests
         env:
-          BASE_URL: ${{ vars.BASE_URL }}
+          BASE_URL: ${{ env.BASE_URL }}
           LEK_EMAIL: ${{ secrets.LEK_EMAIL }}
           LEK_PASSWORD: ${{ secrets.LEK_PASSWORD }}
         run: npm test

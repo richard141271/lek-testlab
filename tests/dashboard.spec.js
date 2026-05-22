@@ -1,11 +1,7 @@
-const { test, expect, requireBaseUrl, gotoAndMeasure } = require('./testlab');
+const { test, expect, ensureOnPage } = require('./testlab');
 
 test('Dashboard: dashboard lastes og viktige kort finnes', async ({ page }, testInfo) => {
-  requireBaseUrl(testInfo);
-
-  const base = process.env.BASE_URL;
-  const url = new URL('/dashboard', base).toString();
-  await gotoAndMeasure(page, testInfo, url);
+  await ensureOnPage(page, testInfo, '/dashboard');
 
   const heading = page.getByRole('heading', { name: /dashboard/i }).first();
   await expect(heading).toBeVisible();

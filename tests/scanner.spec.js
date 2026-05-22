@@ -1,11 +1,7 @@
-const { test, expect, requireBaseUrl, gotoAndMeasure } = require('./testlab');
+const { test, expect, ensureOnPage } = require('./testlab');
 
 test('Scanner: scanner-side åpnes og scanner-knapp finnes', async ({ page }, testInfo) => {
-  requireBaseUrl(testInfo);
-
-  const base = process.env.BASE_URL;
-  const url = new URL('/scanner', base).toString();
-  await gotoAndMeasure(page, testInfo, url);
+  await ensureOnPage(page, testInfo, '/scanner');
 
   const scannerButton = page
     .getByRole('button', { name: /scan|skann|start/i })

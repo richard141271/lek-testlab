@@ -35,9 +35,10 @@ function formatMs(ms) {
   return `${(ms / 1000).toFixed(2)} s`;
 }
 
-function statusToPill(status) {
+function statusToPill(status, warning) {
   const s = String(status || '').toLowerCase();
-  if (s === 'passed') return { text: 'OK', cls: 'statuspill--ok' };
+  if (s === 'passed' && warning) return { text: 'WARN', cls: 'statuspill--warn' };
+  if (s === 'passed') return { text: 'PASS', cls: 'statuspill--ok' };
   if (s === 'failed') return { text: 'FAIL', cls: 'statuspill--critical' };
   if (s === 'skipped') return { text: 'SKIP', cls: 'statuspill--warn' };
   if (s === 'timedout') return { text: 'TIMEOUT', cls: 'statuspill--critical' };
@@ -64,6 +65,12 @@ function getMetric(spec, key) {
     if (m) return Number(m[1]);
   }
   return null;
+}
+
+function getWarning(spec) {
+  const ann = spec?.annotations || [];
+  const found = ann.find((a) => a?.type === 'warning' && typeof a?.description === 'string');
+  return found?.description || '';
 }
 
 function flattenSuites(report) {
@@ -118,9 +125,13 @@ function buildRowsFromReport(report) {
     const { status, duration, error, attachments } = extractLatestResult(spec);
     const loadMs = getMetric(spec, 'loadMs');
     const responseMs = loadMs != null ? loadMs : duration;
+    const warningText = getWarning(spec);
 
     const screenshot = attachments.find((a) => a?.contentType === 'image/png' && typeof a?.path === 'string');
     const screenshotPath = screenshot?.path || null;
+
+    const consoleFile = attachments.find((a) => a?.name === 'console-errors' && typeof a?.path === 'string');
+    const consolePath = consoleFile?.path || null;
 
     const id = canonical?.id || normalizeId(titlePath[titlePath.length - 1] || 'test');
     const label = canonical?.label || titlePath[titlePath.length - 1] || 'Ukjent test';
@@ -134,12 +145,30 @@ function buildRowsFromReport(report) {
       startedAt: report?.stats?.startTime || null,
       responseMs,
       errorText,
-      screenshotPath
+      screenshotPath,
+      consolePath,
+      warning: Boolean(warningText),
+      warningText
     });
   }
 
   const byId = new Map(rows.map((r) => [r.id, r]));
-  return CANONICAL.map((c) => byId.get(c.id) || { id: c.id, label: c.label, status: 'skipped', startedAt: report?.stats?.startTime || null, responseMs: null, errorText: '', screenshotPath: null, titlePath: [c.label] });
+  return CANONICAL.map(
+    (c) =>
+      byId.get(c.id) || {
+        id: c.id,
+        label: c.label,
+        status: 'skipped',
+        startedAt: report?.stats?.startTime || null,
+        responseMs: null,
+        errorText: '',
+        screenshotPath: null,
+        consolePath: null,
+        warning: false,
+        warningText: '',
+        titlePath: [c.label]
+      }
+  );
 }
 
 function mockReport() {
@@ -174,14 +203,15 @@ function renderSummary(report, rows) {
   const failed = Number(report?.stats?.failed || 0);
   const skipped = Number(report?.stats?.skipped || 0);
   const flaky = Number(report?.stats?.flaky || 0);
+  const warnings = rows.filter((r) => r.warning && String(r.status).toLowerCase() === 'passed').length;
 
   $('passedCount').textContent = String(passed);
   $('failedCount').textContent = String(failed);
-  $('warningCount').textContent = String(skipped + flaky);
+  $('warningCount').textContent = String(skipped + flaky + warnings);
   $('lastRun').textContent = formatDateTime(report?.stats?.startTime);
 
   const total = rows.length;
-  const meta = `${total} tester • ${failed ? 'CRITICAL' : skipped + flaky ? 'WARNING' : 'OK'}`;
+  const meta = `${total} tester • ${failed ? 'CRITICAL' : skipped + flaky + warnings ? 'WARNING' : 'OK'}`;
   $('runMeta').textContent = meta;
 }
 
@@ -195,7 +225,7 @@ function renderTable(rows) {
     r.setAttribute('role', 'row');
     r.dataset.testId = row.id;
 
-    const pill = statusToPill(row.status);
+    const pill = statusToPill(row.status, row.warning);
     const hasError = row.status === 'failed' || row.status === 'timedout';
 
     r.innerHTML = `
@@ -208,7 +238,7 @@ function renderTable(rows) {
       </div>
       <div class="table__cell mono" role="cell">${formatDateTime(row.startedAt)}</div>
       <div class="table__cell mono" role="cell">${formatMs(row.responseMs)}</div>
-      <div class="table__cell mono" role="cell">${hasError ? safeText(row.errorText).split('\n')[0].slice(0, 90) : '—'}</div>
+      <div class="table__cell mono" role="cell">${hasError ? safeText(row.errorText).split('\n')[0].slice(0, 90) : row.warning ? safeText(row.warningText).slice(0, 90) : '—'}</div>
     `;
 
     r.addEventListener('click', () => selectRow(row.id));
@@ -216,7 +246,7 @@ function renderTable(rows) {
   }
 }
 
-function renderDetails(row) {
+async function renderDetails(row) {
   const errorCard = $('errorCard');
   const empty = $('errorEmpty');
   if (!row || (row.status !== 'failed' && row.status !== 'timedout')) {
@@ -231,6 +261,10 @@ function renderDetails(row) {
   $('errorTime').textContent = formatDateTime(row.startedAt);
   $('errorMessage').textContent = row.errorText || 'Ukjent feil';
 
+  const statusEl = $('errorStatus');
+  statusEl.textContent = row.status === 'timedout' ? 'TIMEOUT' : 'CRITICAL';
+  statusEl.className = `statuspill ${row.status === 'timedout' ? 'statuspill--critical' : 'statuspill--critical'}`;
+
   const img = $('errorShot');
   if (row.screenshotPath) {
     img.src = row.screenshotPath;
@@ -240,6 +274,21 @@ function renderDetails(row) {
     img.hidden = true;
   }
 
+  const consoleWrap = $('errorConsoleWrap');
+  const consolePre = $('errorConsole');
+  consoleWrap.hidden = true;
+  consolePre.textContent = '';
+  if (row.consolePath) {
+    try {
+      const res = await fetch(`${row.consolePath}?t=${Date.now()}`, { cache: 'no-store' });
+      if (res.ok) {
+        const txt = await res.text();
+        consolePre.textContent = txt;
+        consoleWrap.hidden = false;
+      }
+    } catch {}
+  }
+
   errorCard.hidden = false;
   empty.hidden = true;
 }
@@ -247,7 +296,7 @@ function renderDetails(row) {
 function selectRow(id) {
   STATE.selectedId = id;
   const row = STATE.tests.find((t) => t.id === id) || null;
-  renderDetails(row);
+  void renderDetails(row);
 }
 
 async function refresh() {
@@ -258,7 +307,7 @@ async function refresh() {
   renderSummary(report, rows);
   renderTable(rows);
   if (STATE.selectedId) selectRow(STATE.selectedId);
-  else renderDetails(null);
+  else void renderDetails(null);
 }
 
 function registerPwa() {

@@ -12,7 +12,7 @@ module.exports = defineConfig({
   ],
   outputDir: 'screenshots',
   use: {
-    baseURL: process.env.BASE_URL || undefined,
+    baseURL: process.env.BASE_URL || 'https://staging.lekbie.no',
     screenshot: 'off',
     trace: 'off',
     video: 'off',
