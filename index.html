@@ -18,7 +18,7 @@
         </div>
 
         <div class="topbar__actions">
-          <a class="btn btn--ghost" href="reports/playwright-report/index.html" target="_blank" rel="noreferrer">Åpne rapport</a>
+          <a class="btn btn--ghost" id="reportLink" href="reports/playwright-report/index.html" target="_blank" rel="noreferrer">Åpne rapport</a>
           <button class="btn" id="refreshBtn" type="button">Oppdater</button>
         </div>
       </header>
@@ -70,6 +70,21 @@
             <div class="panel__meta" id="detailsMeta">Trykk på en feilet test for detaljer</div>
           </div>
 
+          <div class="highlights" id="highlights" hidden>
+            <div class="highlights__item">
+              <div class="highlights__label">Latest Fail Screenshot</div>
+              <a class="highlights__value link" id="latestFailLink" href="#" target="_blank" rel="noreferrer">—</a>
+            </div>
+            <div class="highlights__item">
+              <div class="highlights__label">Latest Console Errors</div>
+              <a class="highlights__value link" id="latestConsoleLink" href="#" target="_blank" rel="noreferrer">—</a>
+            </div>
+            <div class="highlights__item">
+              <div class="highlights__label">Latest Successful Run</div>
+              <div class="highlights__value" id="latestSuccess">—</div>
+            </div>
+          </div>
+
           <div class="errorcard" id="errorCard" hidden>
             <div class="errorcard__top">
               <div class="errorcard__title" id="errorTitle">—</div>
@@ -85,7 +100,10 @@
                 </div>
               </div>
               <div class="errorcard__shotwrap">
-                <img class="errorcard__shot" id="errorShot" alt="Screenshot ved feil" loading="lazy" />
+                <a id="errorShotLink" class="errorcard__shotlink" href="#" target="_blank" rel="noreferrer">
+                  <img class="errorcard__shot" id="errorShot" alt="Screenshot ved feil" loading="lazy" />
+                </a>
+                <a id="errorVideoLink" class="errorcard__videolink link" href="#" target="_blank" rel="noreferrer" hidden>Åpne video</a>
               </div>
             </div>
           </div>

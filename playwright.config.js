@@ -10,12 +10,12 @@ module.exports = defineConfig({
     ['html', { outputFolder: 'reports/playwright-report', open: 'never' }],
     ['json', { outputFile: 'reports/results.json' }]
   ],
-  outputDir: 'screenshots',
+  outputDir: 'test-results',
   use: {
     baseURL: process.env.BASE_URL || 'https://staging.lekbie.no',
     screenshot: 'off',
-    trace: 'off',
-    video: 'off',
+    trace: 'retain-on-failure',
+    video: 'retain-on-failure',
     actionTimeout: 15_000,
     navigationTimeout: 30_000
   },

@@ -64,8 +64,14 @@ jobs:
         run: |
           mkdir -p public
           cp index.html style.css app.js manifest.webmanifest sw.js favicon.svg public/
-          if [ -d reports ]; then cp -R reports public/reports; fi
-          if [ -d screenshots ]; then cp -R screenshots public/screenshots; fi
+          touch public/.nojekyll
+
+          mkdir -p reports
+          node -e "const fs=require('fs');const meta={branch:process.env.GITHUB_REF_NAME,sha:process.env.GITHUB_SHA,runId:process.env.GITHUB_RUN_ID,runNumber:process.env.GITHUB_RUN_NUMBER,runAttempt:process.env.GITHUB_RUN_ATTEMPT,createdAt:new Date().toISOString()};fs.mkdirSync('reports',{recursive:true});fs.writeFileSync('reports/meta.json',JSON.stringify(meta,null,2));"
+
+          if [ -d reports ]; then cp -R reports public/; fi
+          if [ -d screenshots ]; then cp -R screenshots public/; fi
+          if [ -d test-results ]; then cp -R test-results public/; fi
 
       - name: Upload Pages artifact
         if: always()
@@ -81,9 +87,10 @@ jobs:
           path: |
             reports
             screenshots
+            test-results
 
   deploy:
-    if: github.ref == 'refs/heads/main'
+    if: always() && (github.ref_name == 'main' || github.ref_name == 'staging' || github.ref_name == 'production')
     needs: test
     runs-on: ubuntu-latest
     environment:

@@ -3,7 +3,8 @@ const $ = (id) => document.getElementById(id);
 const STATE = {
   report: null,
   tests: [],
-  selectedId: null
+  selectedId: null,
+  meta: null
 };
 
 const CANONICAL = [
@@ -133,6 +134,9 @@ function buildRowsFromReport(report) {
     const consoleFile = attachments.find((a) => a?.name === 'console-errors' && typeof a?.path === 'string');
     const consolePath = consoleFile?.path || null;
 
+    const video = attachments.find((a) => a?.contentType === 'video/webm' && typeof a?.path === 'string');
+    const videoPath = video?.path || null;
+
     const id = canonical?.id || normalizeId(titlePath[titlePath.length - 1] || 'test');
     const label = canonical?.label || titlePath[titlePath.length - 1] || 'Ukjent test';
     const errorText = error?.message || error?.stack || '';
@@ -147,6 +151,7 @@ function buildRowsFromReport(report) {
       errorText,
       screenshotPath,
       consolePath,
+      videoPath,
       warning: Boolean(warningText),
       warningText
     });
@@ -164,26 +169,12 @@ function buildRowsFromReport(report) {
         errorText: '',
         screenshotPath: null,
         consolePath: null,
+        videoPath: null,
         warning: false,
         warningText: '',
         titlePath: [c.label]
       }
   );
-}
-
-function mockReport() {
-  const now = new Date();
-  return {
-    stats: {
-      startTime: now.toISOString(),
-      expected: 6,
-      passed: 4,
-      failed: 1,
-      skipped: 1,
-      flaky: 0
-    },
-    suites: []
-  };
 }
 
 async function loadReport() {
@@ -194,11 +185,40 @@ async function loadReport() {
     const json = await res.json();
     return json;
   } catch (e) {
-    return mockReport();
+    return null;
   }
 }
 
+async function loadMeta() {
+  const url = `reports/meta.json?t=${Date.now()}`;
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+function shortSha(sha) {
+  const s = safeText(sha);
+  return s ? s.slice(0, 7) : '';
+}
+
 function renderSummary(report, rows) {
+  const meta = STATE.meta || {};
+  const branch = meta.branch ? safeText(meta.branch) : '';
+  const sha = meta.sha ? shortSha(meta.sha) : '';
+
+  if (!report) {
+    $('passedCount').textContent = '—';
+    $('failedCount').textContent = '—';
+    $('warningCount').textContent = '—';
+    $('lastRun').textContent = 'Ingen rapport funnet';
+    $('runMeta').textContent = branch && sha ? `${branch} • ${sha}` : '—';
+    return;
+  }
+
   const passed = Number(report?.stats?.passed || 0);
   const failed = Number(report?.stats?.failed || 0);
   const skipped = Number(report?.stats?.skipped || 0);
@@ -211,13 +231,34 @@ function renderSummary(report, rows) {
   $('lastRun').textContent = formatDateTime(report?.stats?.startTime);
 
   const total = rows.length;
-  const meta = `${total} tester • ${failed ? 'CRITICAL' : skipped + flaky + warnings ? 'WARNING' : 'OK'}`;
-  $('runMeta').textContent = meta;
+  const status = failed ? 'CRITICAL' : skipped + flaky + warnings ? 'WARNING' : 'OK';
+  const bits = [`${total} tester`, status];
+  if (branch) bits.push(branch);
+  if (sha) bits.push(sha);
+  $('runMeta').textContent = bits.join(' • ');
 }
 
 function renderTable(rows) {
   const container = $('testRows');
   container.innerHTML = '';
+
+  if (!rows.length) {
+    const r = document.createElement('div');
+    r.className = 'table__row table__row--body';
+    r.setAttribute('role', 'row');
+    r.innerHTML = `
+      <div class="table__cell" role="cell">
+        <div class="name">Ingen testdata</div>
+        <div class="sub">Kjør workflow i GitHub Actions for å generere ekte resultater.</div>
+      </div>
+      <div class="table__cell" role="cell"><span class="statuspill statuspill--warn">—</span></div>
+      <div class="table__cell mono" role="cell">—</div>
+      <div class="table__cell mono" role="cell">—</div>
+      <div class="table__cell mono" role="cell">—</div>
+    `;
+    container.appendChild(r);
+    return;
+  }
 
   for (const row of rows) {
     const r = document.createElement('div');
@@ -256,22 +297,41 @@ async function renderDetails(row) {
     return;
   }
 
-  $('detailsMeta').textContent = row.label;
+  const branch = safeText(STATE.meta?.branch);
+  const sha = shortSha(STATE.meta?.sha);
+  const runtime = formatMs(row.responseMs);
+  const metaBits = [row.label, runtime].filter(Boolean);
+  if (branch) metaBits.push(branch);
+  if (sha) metaBits.push(sha);
+  $('detailsMeta').textContent = metaBits.join(' • ');
   $('errorTitle').textContent = row.label;
   $('errorTime').textContent = formatDateTime(row.startedAt);
-  $('errorMessage').textContent = row.errorText || 'Ukjent feil';
+
+  const err = row.errorText || 'Ukjent feil';
+  const selectorLine =
+    err
+      .split('\n')
+      .find((l) => /locator|selector|waiting for|strict mode|element/i.test(l)) || '';
+  const combined = selectorLine && !err.includes(selectorLine) ? `${selectorLine}\n\n${err}` : err;
+  $('errorMessage').textContent = combined;
 
   const statusEl = $('errorStatus');
   statusEl.textContent = row.status === 'timedout' ? 'TIMEOUT' : 'CRITICAL';
   statusEl.className = `statuspill ${row.status === 'timedout' ? 'statuspill--critical' : 'statuspill--critical'}`;
 
   const img = $('errorShot');
+  const imgLink = $('errorShotLink');
   if (row.screenshotPath) {
-    img.src = row.screenshotPath;
+    const v = safeText(STATE.meta?.runId) || String(Date.now());
+    img.src = `${row.screenshotPath}?v=${encodeURIComponent(v)}`;
     img.hidden = false;
+    imgLink.href = img.src;
+    imgLink.hidden = false;
   } else {
     img.removeAttribute('src');
     img.hidden = true;
+    imgLink.href = '#';
+    imgLink.hidden = true;
   }
 
   const consoleWrap = $('errorConsoleWrap');
@@ -280,13 +340,23 @@ async function renderDetails(row) {
   consolePre.textContent = '';
   if (row.consolePath) {
     try {
-      const res = await fetch(`${row.consolePath}?t=${Date.now()}`, { cache: 'no-store' });
+      const v = safeText(STATE.meta?.runId) || String(Date.now());
+      const res = await fetch(`${row.consolePath}?v=${encodeURIComponent(v)}`, { cache: 'no-store' });
       if (res.ok) {
         const txt = await res.text();
         consolePre.textContent = txt;
         consoleWrap.hidden = false;
       }
     } catch {}
+  }
+
+  const videoLink = $('errorVideoLink');
+  videoLink.hidden = true;
+  videoLink.href = '#';
+  if (row.videoPath) {
+    const v = safeText(STATE.meta?.runId) || String(Date.now());
+    videoLink.href = `${row.videoPath}?v=${encodeURIComponent(v)}`;
+    videoLink.hidden = false;
   }
 
   errorCard.hidden = false;
@@ -300,21 +370,74 @@ function selectRow(id) {
 }
 
 async function refresh() {
+  STATE.meta = await loadMeta();
   const report = await loadReport();
-  const rows = buildRowsFromReport(report);
+  const rows = report ? buildRowsFromReport(report) : [];
   STATE.report = report;
   STATE.tests = rows;
   renderSummary(report, rows);
   renderTable(rows);
   if (STATE.selectedId) selectRow(STATE.selectedId);
   else void renderDetails(null);
+
+  const reportLink = $('reportLink');
+  if (reportLink) {
+    const v = safeText(STATE.meta?.runId) || String(Date.now());
+    reportLink.href = `reports/playwright-report/index.html?v=${encodeURIComponent(v)}`;
+  }
+
+  renderHighlights(report, rows);
+}
+
+function renderHighlights(report, rows) {
+  const wrap = $('highlights');
+  if (!wrap) return;
+
+  if (!report) {
+    wrap.hidden = true;
+    return;
+  }
+
+  const v = safeText(STATE.meta?.runId) || String(Date.now());
+  const firstFailWithShot = rows.find((r) => (r.status === 'failed' || r.status === 'timedout') && r.screenshotPath) || null;
+  const firstFailWithConsole = rows.find((r) => (r.status === 'failed' || r.status === 'timedout') && r.consolePath) || null;
+  const success = Number(report?.stats?.failed || 0) === 0;
+
+  const failLink = $('latestFailLink');
+  if (firstFailWithShot) {
+    failLink.textContent = firstFailWithShot.label;
+    failLink.href = `${firstFailWithShot.screenshotPath}?v=${encodeURIComponent(v)}`;
+  } else {
+    failLink.textContent = '—';
+    failLink.href = '#';
+  }
+
+  const consoleLink = $('latestConsoleLink');
+  if (firstFailWithConsole) {
+    consoleLink.textContent = firstFailWithConsole.label;
+    consoleLink.href = `${firstFailWithConsole.consolePath}?v=${encodeURIComponent(v)}`;
+  } else {
+    consoleLink.textContent = '—';
+    consoleLink.href = '#';
+  }
+
+  const latestSuccess = $('latestSuccess');
+  latestSuccess.textContent = success ? formatDateTime(report?.stats?.startTime) : '—';
+
+  wrap.hidden = false;
 }
 
 function registerPwa() {
   if (!('serviceWorker' in navigator)) return;
-  const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-  const isSecure = location.protocol === 'https:' || isLocalhost;
-  if (!isSecure) return;
+  const host = location.hostname.toLowerCase();
+  const isGitHubPages = host.endsWith('github.io');
+  if (isGitHubPages) {
+    navigator.serviceWorker.getRegistrations().then((regs) => regs.forEach((r) => r.unregister())).catch(() => {});
+    return;
+  }
+
+  const isLocalhost = host === 'localhost' || host === '127.0.0.1';
+  if (!isLocalhost) return;
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
