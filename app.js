@@ -383,7 +383,8 @@ async function refresh() {
   const reportLink = $('reportLink');
   if (reportLink) {
     const v = safeText(STATE.meta?.runId) || String(Date.now());
-    reportLink.href = `reports/playwright-report/index.html?v=${encodeURIComponent(v)}`;
+    if (STATE.meta?.runId) reportLink.href = `reports/playwright-report-${encodeURIComponent(STATE.meta.runId)}/index.html`;
+    else reportLink.href = `reports/playwright-report/index.html?v=${encodeURIComponent(v)}`;
   }
 
   renderHighlights(report, rows);

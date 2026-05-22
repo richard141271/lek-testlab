@@ -73,6 +73,10 @@ jobs:
           if [ -d screenshots ]; then cp -R screenshots public/; fi
           if [ -d test-results ]; then cp -R test-results public/; fi
 
+          if [ -d reports/playwright-report ]; then
+            cp -R reports/playwright-report "public/reports/playwright-report-${GITHUB_RUN_ID}"
+          fi
+
       - name: Upload Pages artifact
         if: always()
         uses: actions/upload-pages-artifact@v3
