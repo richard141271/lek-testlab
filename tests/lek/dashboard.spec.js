@@ -1,4 +1,4 @@
-const { test, expect, ensureOnPage } = require('./testlab');
+const { test, expect, ensureOnPage } = require('../testlab');
 
 test('Dashboard: dashboard lastes og viktige kort finnes', async ({ page }, testInfo) => {
   await ensureOnPage(page, testInfo, '/dashboard');

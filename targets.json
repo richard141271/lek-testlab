@@ -1,0 +1,20 @@
+{
+  "targets": [
+    {
+      "id": "lek",
+      "name": "LEK-Biens Vokter",
+      "baseUrlSecret": "LEK_STAGING_URL",
+      "projectName": "lek",
+      "testDir": "tests/lek",
+      "login": { "emailSecret": "LEK_EMAIL", "passwordSecret": "LEK_PASSWORD" }
+    },
+    {
+      "id": "varroascan",
+      "name": "LEK-VarroaScan",
+      "baseUrlSecret": "VARROASCAN_STAGING_URL",
+      "projectName": "varroascan",
+      "testDir": "tests/varroascan",
+      "login": null
+    }
+  ]
+}

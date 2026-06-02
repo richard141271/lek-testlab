@@ -7,15 +7,6 @@ const STATE = {
   meta: null
 };
 
-const CANONICAL = [
-  { id: 'login', label: 'Login' },
-  { id: 'dashboard', label: 'Dashboard' },
-  { id: 'scanner', label: 'Scanner' },
-  { id: 'offline', label: 'Offline' },
-  { id: 'feedback', label: 'Feedback' },
-  { id: 'admin', label: 'Admin' }
-];
-
 function formatDateTime(value) {
   if (!value) return '—';
   const d = value instanceof Date ? value : new Date(value);
@@ -108,12 +99,19 @@ function extractLatestResult(spec) {
   return { status, duration, error, attachments };
 }
 
-function pickCanonical(testTitlePath) {
-  const joined = testTitlePath.join(' ').toLowerCase();
-  for (const c of CANONICAL) {
-    if (joined.includes(`${c.label.toLowerCase()}:`)) return c;
-  }
-  return null;
+function inferTarget(filePath) {
+  const f = safeText(filePath).replace(/\\/g, '/').toLowerCase();
+  if (f.includes('/varroascan/')) return 'varroascan';
+  if (f.includes('/lek/')) return 'lek';
+  return '';
+}
+
+function parseLabelFromTitle(fullTitle) {
+  const t = safeText(fullTitle).trim();
+  if (!t) return { label: 'Ukjent test', subtitle: '' };
+  const idx = t.indexOf(':');
+  if (idx > 0) return { label: t.slice(0, idx).trim(), subtitle: t };
+  return { label: t, subtitle: t };
 }
 
 function buildRowsFromReport(report) {
@@ -122,7 +120,6 @@ function buildRowsFromReport(report) {
 
   for (const item of flat) {
     const { spec, titlePath } = item;
-    const canonical = pickCanonical(titlePath) || null;
     const { status, duration, error, attachments } = extractLatestResult(spec);
     const loadMs = getMetric(spec, 'loadMs');
     const responseMs = loadMs != null ? loadMs : duration;
@@ -137,13 +134,19 @@ function buildRowsFromReport(report) {
     const video = attachments.find((a) => a?.contentType === 'video/webm' && typeof a?.path === 'string');
     const videoPath = video?.path || null;
 
-    const id = canonical?.id || normalizeId(titlePath[titlePath.length - 1] || 'test');
-    const label = canonical?.label || titlePath[titlePath.length - 1] || 'Ukjent test';
+    const file = spec?.file || item?.file || '';
+    const target = inferTarget(file);
+    const title = safeText(titlePath[titlePath.length - 1] || spec?.title || '');
+    const parsed = parseLabelFromTitle(title);
+    const id = normalizeId([target, parsed.subtitle || title || 'test'].filter(Boolean).join('-'));
+    const label = parsed.label;
     const errorText = error?.message || error?.stack || '';
 
     rows.push({
       id,
       label,
+      target,
+      subtitle: parsed.subtitle || title,
       titlePath,
       status,
       startedAt: report?.stats?.startTime || null,
@@ -157,24 +160,15 @@ function buildRowsFromReport(report) {
     });
   }
 
-  const byId = new Map(rows.map((r) => [r.id, r]));
-  return CANONICAL.map(
-    (c) =>
-      byId.get(c.id) || {
-        id: c.id,
-        label: c.label,
-        status: 'skipped',
-        startedAt: report?.stats?.startTime || null,
-        responseMs: null,
-        errorText: '',
-        screenshotPath: null,
-        consolePath: null,
-        videoPath: null,
-        warning: false,
-        warningText: '',
-        titlePath: [c.label]
-      }
-  );
+  const order = { failed: 0, timedout: 0, passed: 1, skipped: 2, interrupted: 3 };
+  rows.sort((a, b) => {
+    const sa = order[String(a.status || '').toLowerCase()] ?? 9;
+    const sb = order[String(b.status || '').toLowerCase()] ?? 9;
+    if (sa !== sb) return sa - sb;
+    if (a.target !== b.target) return a.target.localeCompare(b.target);
+    return a.label.localeCompare(b.label);
+  });
+  return rows;
 }
 
 async function loadReport() {
@@ -272,7 +266,7 @@ function renderTable(rows) {
     r.innerHTML = `
       <div class="table__cell" role="cell">
         <div class="name">${safeText(row.label)}</div>
-        <div class="sub mono">${safeText(row.titlePath?.slice(-1)[0] || '')}</div>
+        <div class="sub mono">${safeText([row.target, row.subtitle].filter(Boolean).join(' • '))}</div>
       </div>
       <div class="table__cell" role="cell">
         <span class="statuspill ${pill.cls}">${pill.text}</span>

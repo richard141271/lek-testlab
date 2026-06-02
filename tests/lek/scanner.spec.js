@@ -1,4 +1,4 @@
-const { test, expect, ensureOnPage } = require('./testlab');
+const { test, expect, ensureOnPage } = require('../testlab');
 
 test('Scanner: scanner-side åpnes og scanner-knapp finnes', async ({ page }, testInfo) => {
   await ensureOnPage(page, testInfo, '/scanner');

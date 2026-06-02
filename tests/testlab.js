@@ -25,7 +25,10 @@ async function gotoAndMeasure(page, testInfo, url) {
 }
 
 async function openPath(page, testInfo, pathname) {
-  const baseURL = testInfo.project?.use?.baseURL || process.env.BASE_URL || 'https://staging.lekbie.no';
+  const baseURL = testInfo.project?.use?.baseURL;
+  if (!baseURL) {
+    throw new Error(`Mangler baseURL for project "${testInfo.project?.name || 'ukjent'}". Sjekk secrets/vars i workflow.`);
+  }
   const url = new URL(pathname, baseURL).toString();
   await gotoAndMeasure(page, testInfo, url);
 }
@@ -35,7 +38,19 @@ function needsLogin(page) {
   return url.includes('/login') || url.includes('signin') || url.includes('auth');
 }
 
+function projectName(testInfo) {
+  return String(testInfo?.project?.name || '').toLowerCase();
+}
+
 async function loginIfNeeded(page, testInfo) {
+  const proj = projectName(testInfo);
+  if (proj !== 'lek') {
+    if (needsLogin(page) || (await page.locator('input[type="password"]').first().isVisible().catch(() => false))) {
+      throw new Error(`Login kreves, men ingen login-strategi er konfigurert for target "${proj || 'ukjent'}"`);
+    }
+    return;
+  }
+
   if (!needsLogin(page)) {
     const passwordInput = page.locator('input[type="password"]').first();
     if (await passwordInput.isVisible().catch(() => false)) {
@@ -97,7 +112,11 @@ async function loginWithEnv(page, testInfo) {
 }
 
 async function ensureAuthenticated(page, testInfo) {
-  const baseURL = testInfo.project?.use?.baseURL || process.env.BASE_URL || 'https://staging.lekbie.no';
+  const proj = projectName(testInfo);
+  if (proj !== 'lek') return;
+
+  const baseURL = testInfo.project?.use?.baseURL;
+  if (!baseURL) throw new Error('Mangler baseURL for LEK');
   const url = new URL('/dashboard', baseURL).toString();
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   await loginIfNeeded(page, testInfo);

@@ -1,4 +1,4 @@
-const { test, expect, openPath, loginIfNeeded } = require('./testlab');
+const { test, expect, openPath, loginIfNeeded } = require('../testlab');
 
 test('Login: åpne LEK, logg inn, bekreft dashboard lastet', async ({ page }, testInfo) => {
   await openPath(page, testInfo, '/login');

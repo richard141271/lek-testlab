@@ -1,4 +1,4 @@
-const { test, expect, ensureOnPage, loginIfNeeded } = require('./testlab');
+const { test, expect, ensureOnPage, loginIfNeeded } = require('../testlab');
 
 test('Offline: app kan åpnes offline og cache fungerer', async ({ page }, testInfo) => {
   await ensureOnPage(page, testInfo, '/dashboard');

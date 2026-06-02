@@ -1,6 +1,6 @@
 # LEK TestLab
 
-LEK TestLab er et lett og visuelt QA-/testsystem for LEK-Biens Vokter™. Systemet kjører Playwright-tester i GitHub Actions, genererer rapporter, tar screenshots ved feil og publiserer et dashboard via GitHub Pages.
+LEK TestLab er et lett og visuelt QA-/testsystem som kan teste flere apper (targets) i samme repo. Systemet kjører Playwright-tester i GitHub Actions, genererer rapporter, tar screenshots ved feil og publiserer et dashboard via GitHub Pages.
 
 ## Hva som skjer i praksis
 
@@ -14,17 +14,28 @@ LEK TestLab er et lett og visuelt QA-/testsystem for LEK-Biens Vokter™. System
 
 Dashboardet (`index.html`) leser `reports/results.json` og viser PASS/FAIL, responstid (loadMs) og siste kjøring. Ved feil kan du klikke på en test og se screenshot + console errors.
 
-## Staging / Production
+## Targets (apper)
 
-Standard BASE_URL er satt til staging:
+Targets er definert i [targets.json](file:///Users/jornsmackbookpro/Documents/trae_projects/lek-testlab/targets.json):
 
-- `https://staging.lekbie.no`
+- `lek` (LEK-Biens Vokter)
+- `varroascan` (LEK-VarroaScan)
+- `all` (begge)
 
-Du kan override i GitHub:
+Playwright kjører prosjekter per target (project name), og rapporten samler alt i samme `results.json`.
 
-- Actions → Settings → Secrets and variables → Actions → Variables
-  - `BASE_URL` (hvis satt brukes alltid)
-  - `PROD_BASE_URL` (brukes på `production`-branch hvis `BASE_URL` ikke er satt)
+## Staging / Production (URLs)
+
+BaseURLs kommer fra GitHub Secrets:
+
+- `LEK_STAGING_URL`
+- `VARROASCAN_STAGING_URL`
+- (valgfritt senere) `LEK_PROD_URL`, `VARROASCAN_PROD_URL`
+
+Workflow setter disse til:
+
+- `LEK_BASE_URL`
+- `VARROASCAN_BASE_URL`
 
 ## Miljøvariabler (login)
 
@@ -44,16 +55,28 @@ npm install
 npx playwright install chromium
 ```
 
-Kjør tester mot staging (default):
+Kjør default target (LEK):
 
 ```bash
 npm test
 ```
 
-Kjør med egne verdier:
+Kjør alle targets:
 
 ```bash
-BASE_URL="https://staging.lekbie.no" LEK_EMAIL="..." LEK_PASSWORD="..." npm test
+TARGET="all" LEK_BASE_URL="https://staging.lekbie.no" VARROASCAN_BASE_URL="https://..." LEK_EMAIL="..." LEK_PASSWORD="..." npm test
+```
+
+Kjør bare LEK:
+
+```bash
+TARGET="lek" LEK_BASE_URL="https://staging.lekbie.no" LEK_EMAIL="..." LEK_PASSWORD="..." npm test
+```
+
+Kjør bare VarroaScan:
+
+```bash
+TARGET="varroascan" VARROASCAN_BASE_URL="https://..." npm test
 ```
 
 Åpne Playwright HTML-rapport:
@@ -62,16 +85,12 @@ BASE_URL="https://staging.lekbie.no" LEK_EMAIL="..." LEK_PASSWORD="..." npm test
 npm run report
 ```
 
-## Tester (MVP)
+## Tester
 
-Testene ligger i `tests/`:
+Testene ligger i:
 
-- `login.spec.js`
-- `dashboard.spec.js`
-- `scanner.spec.js`
-- `feedback.spec.js`
-- `offline.spec.js`
-- `admin.spec.js`
+- `tests/lek/**` (LEK)
+- `tests/varroascan/**` (VarroaScan)
 
 Felles hooks og helpers ligger i `tests/testlab.js`:
 
@@ -81,7 +100,9 @@ Felles hooks og helpers ligger i `tests/testlab.js`:
 
 ## Legg til nye tester
 
-1. Lag en ny fil i `tests/` med suffix `.spec.js`, f.eks. `settings.spec.js`
+1. Lag en ny fil i riktig mappe med suffix `.spec.js`
+   - LEK: `tests/lek/<navn>.spec.js`
+   - VarroaScan: `tests/varroascan/<navn>.spec.js`
 2. Bruk samme mønster som de andre testene:
    - `ensureOnPage(page, testInfo, '/path')` for auth + måling
    - bruk tilgjengelige selektorer (roller/labels/data-testid)
@@ -93,6 +114,6 @@ Workflow: `.github/workflows/test.yml`
 
 - kjører ved push til `main`, `staging`, `production`
 - kjører nightly (cron)
-- kan startes manuelt via Actions (workflow_dispatch)
+- kan startes manuelt via Actions (workflow_dispatch) med target dropdown
 
 GitHub Pages deploy skjer fra `main`.

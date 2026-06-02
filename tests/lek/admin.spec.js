@@ -1,4 +1,4 @@
-const { test, expect, ensureOnPage } = require('./testlab');
+const { test, expect, ensureOnPage } = require('../testlab');
 
 test('Admin: admin-side åpnes', async ({ page }, testInfo) => {
   await ensureOnPage(page, testInfo, '/admin');

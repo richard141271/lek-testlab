@@ -1,4 +1,4 @@
-const { test, expect, ensureOnPage } = require('./testlab');
+const { test, expect, ensureOnPage } = require('../testlab');
 
 test('Feedback: feedbackside åpnes og skjema kan sendes', async ({ page }, testInfo) => {
   await ensureOnPage(page, testInfo, '/feedback');
