@@ -23,6 +23,16 @@ function mergeActual(testInfo, actual) {
   };
 }
 
+function setAiHints(testInfo, hints) {
+  const current = testInfo._lekQaContext || {};
+  testInfo._lekQaContext = {
+    ...current,
+    likelyFiles: Array.isArray(hints?.likelyFiles) ? hints.likelyFiles : current.likelyFiles || [],
+    possibleCauses: Array.isArray(hints?.possibleCauses) ? hints.possibleCauses : current.possibleCauses || [],
+    recommendedChecks: Array.isArray(hints?.recommendedChecks) ? hints.recommendedChecks : current.recommendedChecks || []
+  };
+}
+
 async function clickFirstVisible(page, locators) {
   for (const locator of locators) {
     if (await locator.isVisible().catch(() => false)) {
@@ -262,6 +272,7 @@ module.exports = {
   annotateSuite,
   setQaContext,
   mergeActual,
+  setAiHints,
   openFirstReachable,
   fillAuroraForm,
   submitAurora,

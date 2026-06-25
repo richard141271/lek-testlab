@@ -28,6 +28,12 @@ if (!projects.length) {
   });
 }
 
+projects.push({
+  name: 'system',
+  testMatch: ['system/**/*.spec.js'],
+  use: { ...devices['Desktop Chrome'] }
+});
+
 module.exports = defineConfig({
   testDir: './tests',
   timeout: 60_000,

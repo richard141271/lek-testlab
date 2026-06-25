@@ -42,6 +42,24 @@ function projectName(testInfo) {
   return String(testInfo?.project?.name || '').toLowerCase();
 }
 
+function inferEnv() {
+  const ref = String(process.env.GITHUB_REF_NAME || '').toLowerCase();
+  if (ref === 'production') return 'PRODUCTION';
+  if (ref === 'staging') return 'STAGING';
+  return 'LOCAL';
+}
+
+function inferApp(testInfo) {
+  const project = projectName(testInfo);
+  if (project === 'varroascan') return 'VarroaScan';
+  if (project === 'system') return 'LEK-TestLab';
+  return 'LEK';
+}
+
+function safeArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
 async function loginIfNeeded(page, testInfo) {
   const proj = projectName(testInfo);
   if (proj !== 'lek') {
@@ -171,14 +189,49 @@ test.afterEach(async ({ page }, testInfo) => {
     title: testInfo.title,
     file: testInfo.file,
     project: testInfo.project?.name || '',
+    app: inferApp(testInfo),
+    env: inferEnv(),
+    test_name: path.basename(testInfo.file || ''),
     input: testInfo._lekQaContext?.input || null,
     expected: testInfo._lekQaContext?.expected || null,
     actual: testInfo._lekQaContext?.actual || null,
-    knowledgeSlugs: testInfo._lekQaContext?.knowledgeSlugs || [],
-    biologicalRules: testInfo._lekQaContext?.biologicalRules || [],
+    actual_text: testInfo._lekQaContext?.actualText || '',
+    knowledgeSlugs: safeArray(testInfo._lekQaContext?.knowledgeSlugs),
+    biologicalRules: safeArray(testInfo._lekQaContext?.biologicalRules),
+    likely_files: safeArray(testInfo._lekQaContext?.likelyFiles),
+    possible_causes: safeArray(testInfo._lekQaContext?.possibleCauses),
+    recommended_checks: safeArray(testInfo._lekQaContext?.recommendedChecks),
     notes: testInfo._lekQaContext?.notes || '',
     error: testInfo.error?.message || testInfo.error?.stack || '',
     annotations: testInfo.annotations || []
+  };
+
+  qaDetails.ai_friendly_output = {
+    test_name: qaDetails.test_name,
+    expected: qaDetails.expected,
+    actual: qaDetails.actual,
+    knowledge_slugs: qaDetails.knowledgeSlugs,
+    biological_rules: qaDetails.biologicalRules,
+    likely_files: qaDetails.likely_files,
+    possible_causes: qaDetails.possible_causes,
+    recommended_checks: qaDetails.recommended_checks
+  };
+
+  qaDetails.standard_report = {
+    APP: qaDetails.app,
+    ENV: qaDetails.env,
+    TEST: qaDetails.test_name,
+    INPUT: qaDetails.input,
+    EXPECTED: qaDetails.expected,
+    ACTUAL: qaDetails.actual,
+    KNOWLEDGE_SLUGS: qaDetails.knowledgeSlugs,
+    BIOLOGICAL_RULES: qaDetails.biologicalRules,
+    LIKELY_FILES: qaDetails.likely_files,
+    POSSIBLE_CAUSES: qaDetails.possible_causes,
+    RECOMMENDED_CHECKS: qaDetails.recommended_checks,
+    SCREENSHOT: relPath,
+    VIDEO: '',
+    TRACE: ''
   };
 
   const qaName = `${sanitizeFileName(testInfo.title)}-${timestamp()}.json`;
@@ -187,6 +240,15 @@ test.afterEach(async ({ page }, testInfo) => {
   await fs.promises.mkdir(path.dirname(qaAbs), { recursive: true });
   await fs.promises.writeFile(qaAbs, JSON.stringify(qaDetails, null, 2), 'utf8');
   testInfo.attachments.push({ name: 'qa-details', path: qaRel, contentType: 'application/json' });
+
+  const latestResult = testInfo.attachments[testInfo.attachments.length - 1];
+  const videoAttachment = (testInfo.attachments || []).find((item) => item?.contentType === 'video/webm' && item?.path);
+  const traceAttachment = (testInfo.attachments || []).find((item) => item?.name === 'trace' && item?.path);
+  if (videoAttachment) qaDetails.standard_report.VIDEO = videoAttachment.path;
+  if (traceAttachment) qaDetails.standard_report.TRACE = traceAttachment.path;
+  if (latestResult?.path === qaRel) {
+    await fs.promises.writeFile(qaAbs, JSON.stringify(qaDetails, null, 2), 'utf8');
+  }
 });
 
 module.exports = { test, expect, gotoAndMeasure, openPath, ensureOnPage, loginIfNeeded, ensureAuthenticated };

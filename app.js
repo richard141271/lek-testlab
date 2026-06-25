@@ -13,7 +13,9 @@ const CATEGORY_ORDER = {
   'AKB Tests': 2,
   'Biologiske Regler': 3,
   'User Journeys': 4,
-  'Offline Tests': 5
+  'Regression Tests': 5,
+  'System Health': 6,
+  'Offline Tests': 7
 };
 
 function formatDateTime(value) {
@@ -125,6 +127,8 @@ function inferCategory(filePath, suiteAnnotation, title) {
   const file = safeText(filePath).replace(/\\/g, '/').toLowerCase();
   const suite = safeText(suiteAnnotation).toLowerCase();
   const t = safeText(title).toLowerCase();
+  if (suite === 'system' || file.includes('/system/')) return 'System Health';
+  if (suite === 'regression' || file.includes('/regression/')) return 'Regression Tests';
   if (suite === 'aurora' || file.includes('/aurora/')) return 'Aurora Tests';
   if (suite === 'akb' || file.includes('/akb/')) return 'AKB Tests';
   if (suite === 'biology' || file.includes('/biology/')) return 'Biologiske Regler';
@@ -341,7 +345,7 @@ function renderSuiteCards(rows) {
   const container = $('suiteRows');
   if (!container) return;
   container.innerHTML = '';
-  const suites = ['UI Tests', 'Aurora Tests', 'AKB Tests', 'Biologiske Regler', 'User Journeys', 'Offline Tests'];
+  const suites = ['UI Tests', 'Aurora Tests', 'AKB Tests', 'Biologiske Regler', 'User Journeys', 'Regression Tests', 'System Health', 'Offline Tests'];
 
   for (const suite of suites) {
     const items = rows.filter((row) => row.category === suite);
@@ -406,6 +410,9 @@ async function renderDetails(row) {
     $('qaActual').textContent = prettyJson(qa.actual);
     $('qaSlugs').textContent = prettyJson(qa.knowledgeSlugs);
     $('qaBioRules').textContent = prettyJson(qa.biologicalRules);
+    $('qaLikelyFiles').textContent = prettyJson(qa.likely_files);
+    $('qaPossibleCauses').textContent = prettyJson(qa.possible_causes);
+    $('qaRecommendedChecks').textContent = prettyJson(qa.recommended_checks);
     structured.hidden = false;
   } else {
     $('qaInput').textContent = '—';
@@ -413,6 +420,9 @@ async function renderDetails(row) {
     $('qaActual').textContent = '—';
     $('qaSlugs').textContent = '—';
     $('qaBioRules').textContent = '—';
+    $('qaLikelyFiles').textContent = '—';
+    $('qaPossibleCauses').textContent = '—';
+    $('qaRecommendedChecks').textContent = '—';
     structured.hidden = true;
   }
 
