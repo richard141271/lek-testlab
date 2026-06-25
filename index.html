@@ -52,6 +52,8 @@
             <div class="panel__meta" id="runMeta">—</div>
           </div>
 
+          <div class="suitegrid" id="suiteRows" aria-label="Testsuiter"></div>
+
           <div class="table" role="table" aria-label="Testresultater">
             <div class="table__row table__row--head" role="row">
               <div class="table__cell" role="columnheader">Test</div>
@@ -94,6 +96,28 @@
             <div class="errorcard__body">
               <div>
                 <div class="errorcard__message" id="errorMessage">—</div>
+                <div class="errorcard__structured" id="errorStructured" hidden>
+                  <div class="errorcard__kv">
+                    <div class="errorcard__k">Input</div>
+                    <pre class="errorcard__v" id="qaInput">—</pre>
+                  </div>
+                  <div class="errorcard__kv">
+                    <div class="errorcard__k">Forventet</div>
+                    <pre class="errorcard__v" id="qaExpected">—</pre>
+                  </div>
+                  <div class="errorcard__kv">
+                    <div class="errorcard__k">Faktisk</div>
+                    <pre class="errorcard__v" id="qaActual">—</pre>
+                  </div>
+                  <div class="errorcard__kv">
+                    <div class="errorcard__k">Knowledge Slugs</div>
+                    <pre class="errorcard__v" id="qaSlugs">—</pre>
+                  </div>
+                  <div class="errorcard__kv">
+                    <div class="errorcard__k">Biologiske regler</div>
+                    <pre class="errorcard__v" id="qaBioRules">—</pre>
+                  </div>
+                </div>
                 <div class="errorcard__console" id="errorConsoleWrap" hidden>
                   <div class="errorcard__consolehead">Console errors</div>
                   <pre class="errorcard__consolepre" id="errorConsole"></pre>

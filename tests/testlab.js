@@ -133,6 +133,7 @@ const test = base.test;
 test.beforeEach(async ({ page }, testInfo) => {
   const errors = [];
   testInfo._lekConsoleErrors = errors;
+  testInfo._lekQaContext = {};
 
   page.on('pageerror', (err) => {
     errors.push({ kind: 'pageerror', message: String(err?.message || err), stack: String(err?.stack || '') });
@@ -165,6 +166,27 @@ test.afterEach(async ({ page }, testInfo) => {
     await fs.promises.writeFile(consoleAbs, JSON.stringify({ url: page.url(), errors }, null, 2), 'utf8');
     testInfo.attachments.push({ name: 'console-errors', path: consoleRel, contentType: 'text/plain' });
   }
+
+  const qaDetails = {
+    title: testInfo.title,
+    file: testInfo.file,
+    project: testInfo.project?.name || '',
+    input: testInfo._lekQaContext?.input || null,
+    expected: testInfo._lekQaContext?.expected || null,
+    actual: testInfo._lekQaContext?.actual || null,
+    knowledgeSlugs: testInfo._lekQaContext?.knowledgeSlugs || [],
+    biologicalRules: testInfo._lekQaContext?.biologicalRules || [],
+    notes: testInfo._lekQaContext?.notes || '',
+    error: testInfo.error?.message || testInfo.error?.stack || '',
+    annotations: testInfo.annotations || []
+  };
+
+  const qaName = `${sanitizeFileName(testInfo.title)}-${timestamp()}.json`;
+  const qaRel = path.join('reports', 'details', qaName);
+  const qaAbs = path.join(process.cwd(), qaRel);
+  await fs.promises.mkdir(path.dirname(qaAbs), { recursive: true });
+  await fs.promises.writeFile(qaAbs, JSON.stringify(qaDetails, null, 2), 'utf8');
+  testInfo.attachments.push({ name: 'qa-details', path: qaRel, contentType: 'application/json' });
 });
 
 module.exports = { test, expect, gotoAndMeasure, openPath, ensureOnPage, loginIfNeeded, ensureAuthenticated };

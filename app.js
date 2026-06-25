@@ -7,6 +7,15 @@ const STATE = {
   meta: null
 };
 
+const CATEGORY_ORDER = {
+  'UI Tests': 0,
+  'Aurora Tests': 1,
+  'AKB Tests': 2,
+  'Biologiske Regler': 3,
+  'User Journeys': 4,
+  'Offline Tests': 5
+};
+
 function formatDateTime(value) {
   if (!value) return '—';
   const d = value instanceof Date ? value : new Date(value);
@@ -65,6 +74,12 @@ function getWarning(spec) {
   return found?.description || '';
 }
 
+function getSuiteAnnotation(spec) {
+  const ann = spec?.annotations || [];
+  const found = ann.find((a) => a?.type === 'suite' && typeof a?.description === 'string');
+  return found?.description || '';
+}
+
 function flattenSuites(report) {
   const specs = [];
   const walk = (suite, parentTitles) => {
@@ -106,6 +121,18 @@ function inferTarget(filePath) {
   return '';
 }
 
+function inferCategory(filePath, suiteAnnotation, title) {
+  const file = safeText(filePath).replace(/\\/g, '/').toLowerCase();
+  const suite = safeText(suiteAnnotation).toLowerCase();
+  const t = safeText(title).toLowerCase();
+  if (suite === 'aurora' || file.includes('/aurora/')) return 'Aurora Tests';
+  if (suite === 'akb' || file.includes('/akb/')) return 'AKB Tests';
+  if (suite === 'biology' || file.includes('/biology/')) return 'Biologiske Regler';
+  if (suite === 'user-journeys' || file.includes('/user-journeys/')) return 'User Journeys';
+  if (t.includes('offline') || file.endsWith('/offline.spec.js')) return 'Offline Tests';
+  return 'UI Tests';
+}
+
 function parseLabelFromTitle(fullTitle) {
   const t = safeText(fullTitle).trim();
   if (!t) return { label: 'Ukjent test', subtitle: '' };
@@ -124,6 +151,7 @@ function buildRowsFromReport(report) {
     const loadMs = getMetric(spec, 'loadMs');
     const responseMs = loadMs != null ? loadMs : duration;
     const warningText = getWarning(spec);
+    const suiteAnnotation = getSuiteAnnotation(spec);
 
     const screenshot = attachments.find((a) => a?.contentType === 'image/png' && typeof a?.path === 'string');
     const screenshotPath = screenshot?.path || null;
@@ -133,6 +161,8 @@ function buildRowsFromReport(report) {
 
     const video = attachments.find((a) => a?.contentType === 'video/webm' && typeof a?.path === 'string');
     const videoPath = video?.path || null;
+    const qaDetails = attachments.find((a) => a?.name === 'qa-details' && typeof a?.path === 'string');
+    const qaDetailsPath = qaDetails?.path || null;
 
     const file = spec?.file || item?.file || '';
     const target = inferTarget(file);
@@ -141,11 +171,13 @@ function buildRowsFromReport(report) {
     const id = normalizeId([target, parsed.subtitle || title || 'test'].filter(Boolean).join('-'));
     const label = parsed.label;
     const errorText = error?.message || error?.stack || '';
+    const category = inferCategory(file, suiteAnnotation, title);
 
     rows.push({
       id,
       label,
       target,
+      category,
       subtitle: parsed.subtitle || title,
       titlePath,
       status,
@@ -155,6 +187,7 @@ function buildRowsFromReport(report) {
       screenshotPath,
       consolePath,
       videoPath,
+      qaDetailsPath,
       warning: Boolean(warningText),
       warningText
     });
@@ -165,10 +198,23 @@ function buildRowsFromReport(report) {
     const sa = order[String(a.status || '').toLowerCase()] ?? 9;
     const sb = order[String(b.status || '').toLowerCase()] ?? 9;
     if (sa !== sb) return sa - sb;
+    const ca = CATEGORY_ORDER[a.category] ?? 99;
+    const cb = CATEGORY_ORDER[b.category] ?? 99;
+    if (ca !== cb) return ca - cb;
     if (a.target !== b.target) return a.target.localeCompare(b.target);
     return a.label.localeCompare(b.label);
   });
   return rows;
+}
+
+function prettyJson(value) {
+  if (value == null || value === '') return '—';
+  if (typeof value === 'string') return value;
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
 }
 
 async function loadReport() {
@@ -254,7 +300,17 @@ function renderTable(rows) {
     return;
   }
 
+  let currentCategory = '';
   for (const row of rows) {
+    if (row.category !== currentCategory) {
+      currentCategory = row.category;
+      const section = document.createElement('div');
+      section.className = 'table__row table__row--section';
+      section.setAttribute('role', 'row');
+      section.innerHTML = `<div class="table__cell" role="cell">${safeText(currentCategory)}</div>`;
+      container.appendChild(section);
+    }
+
     const r = document.createElement('div');
     r.className = 'table__row table__row--body';
     r.setAttribute('role', 'row');
@@ -278,6 +334,39 @@ function renderTable(rows) {
 
     r.addEventListener('click', () => selectRow(row.id));
     container.appendChild(r);
+  }
+}
+
+function renderSuiteCards(rows) {
+  const container = $('suiteRows');
+  if (!container) return;
+  container.innerHTML = '';
+  const suites = ['UI Tests', 'Aurora Tests', 'AKB Tests', 'Biologiske Regler', 'User Journeys', 'Offline Tests'];
+
+  for (const suite of suites) {
+    const items = rows.filter((row) => row.category === suite);
+    const fails = items.filter((row) => row.status === 'failed' || row.status === 'timedout').length;
+    const warns = items.filter((row) => row.warning).length;
+    const card = document.createElement('div');
+    card.className = 'suitecard';
+    card.innerHTML = `
+      <div class="suitecard__title">${suite}</div>
+      <div class="suitecard__value">${items.length || 0}</div>
+      <div class="suitecard__meta">${fails} FAIL • ${warns} WARN</div>
+    `;
+    container.appendChild(card);
+  }
+}
+
+async function loadQaDetails(pathname) {
+  if (!pathname) return null;
+  try {
+    const v = safeText(STATE.meta?.runId) || String(Date.now());
+    const res = await fetch(`${pathname}?v=${encodeURIComponent(v)}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch {
+    return null;
   }
 }
 
@@ -308,6 +397,24 @@ async function renderDetails(row) {
       .find((l) => /locator|selector|waiting for|strict mode|element/i.test(l)) || '';
   const combined = selectorLine && !err.includes(selectorLine) ? `${selectorLine}\n\n${err}` : err;
   $('errorMessage').textContent = combined;
+
+  const qa = await loadQaDetails(row.qaDetailsPath);
+  const structured = $('errorStructured');
+  if (qa) {
+    $('qaInput').textContent = prettyJson(qa.input);
+    $('qaExpected').textContent = prettyJson(qa.expected);
+    $('qaActual').textContent = prettyJson(qa.actual);
+    $('qaSlugs').textContent = prettyJson(qa.knowledgeSlugs);
+    $('qaBioRules').textContent = prettyJson(qa.biologicalRules);
+    structured.hidden = false;
+  } else {
+    $('qaInput').textContent = '—';
+    $('qaExpected').textContent = '—';
+    $('qaActual').textContent = '—';
+    $('qaSlugs').textContent = '—';
+    $('qaBioRules').textContent = '—';
+    structured.hidden = true;
+  }
 
   const statusEl = $('errorStatus');
   statusEl.textContent = row.status === 'timedout' ? 'TIMEOUT' : 'CRITICAL';
@@ -370,6 +477,7 @@ async function refresh() {
   STATE.report = report;
   STATE.tests = rows;
   renderSummary(report, rows);
+  renderSuiteCards(rows);
   renderTable(rows);
   if (STATE.selectedId) selectRow(STATE.selectedId);
   else void renderDetails(null);

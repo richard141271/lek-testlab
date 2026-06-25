@@ -221,6 +221,38 @@ body {
   width: 100%;
 }
 
+.suitegrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  padding: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.suitecard {
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.suitecard__title {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.suitecard__value {
+  margin-top: 6px;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.suitecard__meta {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .table__row {
   display: grid;
   grid-template-columns: 1.2fr 0.55fr 0.9fr 0.75fr 1.3fr;
@@ -235,6 +267,15 @@ body {
   color: var(--muted);
   font-size: 12px;
   letter-spacing: 0.3px;
+}
+
+.table__row--section {
+  grid-template-columns: 1fr;
+  background: rgba(56, 189, 248, 0.08);
+  color: rgba(56, 189, 248, 0.96);
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0.35px;
 }
 
 .table__row--body {
@@ -341,6 +382,38 @@ body {
   white-space: pre-wrap;
 }
 
+.errorcard__structured {
+  margin-top: 10px;
+  display: grid;
+  gap: 10px;
+}
+
+.errorcard__kv {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.025);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.errorcard__k {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.errorcard__v {
+  margin: 0;
+  padding: 10px 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: rgba(255, 255, 255, 0.88);
+}
+
 .errorcard__console {
   margin-top: 10px;
   border: 1px solid rgba(56, 189, 248, 0.22);
@@ -439,6 +512,10 @@ body {
 
   .cards {
     grid-template-columns: repeat(4, 1fr);
+  }
+
+  .suitegrid {
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .errorcard__body {
