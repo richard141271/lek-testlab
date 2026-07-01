@@ -91,6 +91,7 @@ Testene ligger i:
 
 - `tests/lek/**` (LEK)
 - `tests/varroascan/**` (VarroaScan)
+- `tests/system/**` (System Health)
 
 Felles hooks og helpers ligger i `tests/testlab.js`:
 
@@ -107,6 +108,23 @@ Felles hooks og helpers ligger i `tests/testlab.js`:
    - `ensureOnPage(page, testInfo, '/path')` for auth + måling
    - bruk tilgjengelige selektorer (roller/labels/data-testid)
 3. Dashboardet plukker automatisk opp resultatene via `reports/results.json`
+
+## Feature Registry og Definition of Done (DoD)
+
+`features.json` er kilden til sannhet for hva som må være testet. Den brukes av systemtesten `tests/system/feature-coverage.spec.js` til å sikre:
+
+- ingen features kan glemmes (required features må ha tester)
+- alle refererte testfiler finnes
+- ingen `.spec.js`-tester ligger “løst” uten å være registrert i `features.json`
+
+En feature regnes ikke som ferdig før:
+
+- koden fungerer
+- workflow er grønn
+- Playwright-test finnes
+- feature er registrert i `features.json`
+- relevante user journeys er oppdatert
+- ved bugfix: regression-test er opprettet og blir værende
 
 ## Automatikk i GitHub Actions
 

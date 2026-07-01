@@ -1,0 +1,19 @@
+{
+  "features": [
+    { "id": "login", "name": "Innlogging", "tests": ["lek/login.spec.js"], "required": true },
+    { "id": "dashboard", "name": "Dashboard", "tests": ["lek/dashboard.spec.js"], "required": true },
+    { "id": "scanner", "name": "Scanner", "tests": ["lek/scanner.spec.js"], "required": true },
+    { "id": "feedback", "name": "Feedback", "tests": ["lek/feedback.spec.js"], "required": true },
+    { "id": "offline-pwa", "name": "Offline / PWA", "tests": ["lek/offline.spec.js"], "required": true },
+    { "id": "admin", "name": "Admin", "tests": ["lek/admin.spec.js"], "required": false },
+
+    { "id": "aurora", "name": "Aurora (forslag og oppgaver)", "tests": ["lek/aurora/normal-hive.spec.js", "lek/aurora/low-food.spec.js", "lek/aurora/queen-missing.spec.js", "lek/aurora/deformed-wings.spec.js", "lek/aurora/swarming.spec.js", "lek/aurora/varroa.spec.js", "lek/aurora/duplicate-tasks.spec.js"], "required": true },
+    { "id": "akb", "name": "AKB (knowledge integrity)", "tests": ["lek/akb/coverage.spec.js", "lek/akb/duplicate-slugs.spec.js", "lek/akb/empty-fields.spec.js", "lek/akb/knowledge-links.spec.js"], "required": false },
+    { "id": "biology", "name": "Biologiske regler", "tests": ["lek/biology/eggs.spec.js", "lek/biology/queen.spec.js", "lek/biology/feeding.spec.js", "lek/biology/swarming.spec.js"], "required": true },
+
+    { "id": "journeys", "name": "Brukerreiser", "tests": ["lek/user-journeys/new-beekeeper.spec.js", "lek/user-journeys/first-inspection.spec.js", "lek/user-journeys/offline-sync.spec.js", "lek/user-journeys/aurora-followup.spec.js"], "required": true },
+    { "id": "regression", "name": "Regression policy (bugs kommer ikke tilbake)", "tests": ["lek/regression/issue-001-duplicate-tasks.spec.js", "lek/regression/issue-002-queen-eggs-conflict.spec.js", "lek/regression/issue-003-food-followup.spec.js", "lek/regression/issue-004-dwv-single-task.spec.js"], "required": true },
+
+    { "id": "varroascan-submit", "name": "VarroaScan – send inn bilde", "tests": ["varroascan/submit.spec.js"], "required": true }
+  ]
+}
