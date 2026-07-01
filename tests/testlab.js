@@ -86,6 +86,8 @@ async function loginWithEnv(page, testInfo) {
     throw new Error('Mangler LEK_EMAIL/LEK_PASSWORD. Sett secrets i GitHub Actions eller miljøvariabler lokalt.');
   }
 
+  const beforeUrl = page.url();
+
   const email = page
     .getByLabel(/e-?post|email/i)
     .or(page.getByPlaceholder(/e-?post|email/i))
@@ -112,7 +114,7 @@ async function loginWithEnv(page, testInfo) {
   await expect(submit).toBeVisible();
   await submit.click();
 
-  await page.waitForLoadState('domcontentloaded');
+  await page.waitForLoadState('domcontentloaded').catch(() => {});
   await page.waitForTimeout(400);
 
   const dashboardSignal = page
@@ -121,10 +123,25 @@ async function loginWithEnv(page, testInfo) {
     .or(page.locator('text=/dashboard/i').first())
     .first();
 
+  await page
+    .waitForURL((u) => !/\/login\b/i.test(u.pathname), { timeout: 10_000 })
+    .catch(() => {});
+
   if (await dashboardSignal.isVisible().catch(() => false)) return;
 
-  const url = page.url().toLowerCase();
-  if (url.includes('/dashboard')) return;
+  const afterUrl = page.url();
+  const pathname = (() => {
+    try {
+      return new URL(afterUrl).pathname.toLowerCase();
+    } catch {
+      return afterUrl.toLowerCase();
+    }
+  })();
+
+  if (pathname.includes('/dashboard')) return;
+  if (pathname.includes('/login')) {
+    throw new Error(`Login failed. User remained on /login. (before: ${beforeUrl || '—'} | after: ${afterUrl || '—'})`);
+  }
 
   testInfo.annotations.push({ type: 'warning', description: 'Login fullførte uten tydelig dashboard-signal' });
 }
@@ -138,6 +155,17 @@ async function ensureAuthenticated(page, testInfo) {
   const url = new URL('/dashboard', baseURL).toString();
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   await loginIfNeeded(page, testInfo);
+
+  const pathname = (() => {
+    try {
+      return new URL(page.url()).pathname.toLowerCase();
+    } catch {
+      return page.url().toLowerCase();
+    }
+  })();
+  if (pathname.includes('/login')) {
+    throw new Error('Login failed. User remained on /login.');
+  }
 }
 
 async function ensureOnPage(page, testInfo, pathname) {

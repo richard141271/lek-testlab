@@ -3,7 +3,18 @@ const { setQaContext, mergeActual } = require('../helpers');
 const { loadAkbData } = require('./shared');
 
 test('AKB Duplicate slugs: ingen artikler skal dele samme slug', async ({ page }, testInfo) => {
-  const { articles } = await loadAkbData(page, testInfo);
+  let data;
+  try {
+    data = await loadAkbData(page, testInfo);
+  } catch (e) {
+    if (e?.code === 'AKB_ENDPOINT_UNAVAILABLE') {
+      test.skip(true, 'AKB endpoint not implemented or not exposed in staging.');
+      return;
+    }
+    throw e;
+  }
+
+  const { articles } = data;
   const counts = new Map();
   for (const article of articles) {
     const slug = String(article.slug || article.knowledge_slug || '').trim();

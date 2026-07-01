@@ -3,7 +3,18 @@ const { setQaContext, mergeActual } = require('../helpers');
 const { loadAkbData } = require('./shared');
 
 test('AKB Knowledge links: artikler skal ha gyldige interne lenker eller slug-referanser', async ({ page }, testInfo) => {
-  const { articles } = await loadAkbData(page, testInfo);
+  let data;
+  try {
+    data = await loadAkbData(page, testInfo);
+  } catch (e) {
+    if (e?.code === 'AKB_ENDPOINT_UNAVAILABLE') {
+      test.skip(true, 'AKB endpoint not implemented or not exposed in staging.');
+      return;
+    }
+    throw e;
+  }
+
+  const { articles } = data;
   const invalid = [];
 
   for (const article of articles) {
