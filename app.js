@@ -305,6 +305,16 @@ function shortSha(sha) {
   return s ? s.slice(0, 7) : '';
 }
 
+function renderVersion(meta) {
+  const versionTag = $('versionTag');
+  if (!versionTag) return;
+
+  const sha = shortSha(meta?.sha);
+  const branch = safeText(meta?.branch);
+  versionTag.textContent = sha ? `commit ${sha}` : 'commit —';
+  versionTag.title = branch && sha ? `${branch} • ${safeText(meta.sha)}` : sha ? safeText(meta.sha) : 'Ingen meta.json funnet';
+}
+
 function renderSummary(report, rows) {
   const meta = STATE.meta || {};
   const branch = meta.branch ? safeText(meta.branch) : '';
@@ -547,6 +557,7 @@ async function refresh() {
   const rows = report ? buildRowsFromReport(report) : [];
   STATE.report = report;
   STATE.tests = rows;
+  renderVersion(STATE.meta);
   renderSummary(report, rows);
   renderSuiteCards(rows);
   renderTable(rows);

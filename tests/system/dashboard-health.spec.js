@@ -14,11 +14,13 @@ test('System Health: dashboard har seksjoner, resultater og detaljpanel', async 
   expect(html.includes('id="suiteRows"')).toBeTruthy();
   expect(html.includes('id="errorCard"')).toBeTruthy();
   expect(html.includes('id="errorStructured"')).toBeTruthy();
+  expect(html.includes('id="versionTag"')).toBeTruthy();
 
   expect(js.includes('renderTable(rows)')).toBeTruthy();
   expect(js.includes('renderSuiteCards(rows)')).toBeTruthy();
   expect(js.includes('renderDetails(row)')).toBeTruthy();
   expect(js.includes('loadQaDetails')).toBeTruthy();
+  expect(js.includes('renderVersion(STATE.meta)')).toBeTruthy();
   expect(js.includes('report?.stats?.expected')).toBeTruthy();
   expect(js.includes('report?.stats?.unexpected')).toBeTruthy();
   expect(js.includes('expectedStatus === \'skipped\'')).toBeTruthy();
