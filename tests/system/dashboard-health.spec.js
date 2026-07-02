@@ -19,4 +19,7 @@ test('System Health: dashboard har seksjoner, resultater og detaljpanel', async 
   expect(js.includes('renderSuiteCards(rows)')).toBeTruthy();
   expect(js.includes('renderDetails(row)')).toBeTruthy();
   expect(js.includes('loadQaDetails')).toBeTruthy();
+  expect(js.includes('report?.stats?.expected')).toBeTruthy();
+  expect(js.includes('report?.stats?.unexpected')).toBeTruthy();
+  expect(js.includes('expectedStatus === \'skipped\'')).toBeTruthy();
 });

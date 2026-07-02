@@ -82,6 +82,51 @@ function getSuiteAnnotation(spec) {
   return found?.description || '';
 }
 
+function getAnnotations(spec, result) {
+  return result?.annotations || spec?.annotations || [];
+}
+
+function hasExplicitSkip(annotations) {
+  return annotations.some((a) => a?.type === 'skip' && typeof a?.description === 'string' && a.description.trim());
+}
+
+function classifyStatus(result) {
+  const status = String(result?.status || '').toLowerCase();
+  const expectedStatus = String(result?.expectedStatus || '').toLowerCase();
+  const explicitSkip = hasExplicitSkip(result?.annotations || []);
+
+  if (status === 'passed') return 'passed';
+  if (status === 'failed' || status === 'timedout') return 'failed';
+  if (status === 'interrupted') return 'interrupted';
+  if (status === 'skipped') {
+    if (expectedStatus === 'skipped' || explicitSkip) return 'skipped';
+    return 'interrupted';
+  }
+  return status || 'unknown';
+}
+
+function summarizeRows(rows) {
+  const summary = {
+    passed: 0,
+    failed: 0,
+    skipped: 0,
+    warnings: 0,
+    interrupted: 0
+  };
+
+  for (const row of rows) {
+    const status = classifyStatus(row);
+    if (status === 'passed') summary.passed += 1;
+    else if (status === 'failed') summary.failed += 1;
+    else if (status === 'skipped') summary.skipped += 1;
+    else if (status === 'interrupted') summary.interrupted += 1;
+
+    if (row.warning && status === 'passed') summary.warnings += 1;
+  }
+
+  return summary;
+}
+
 function flattenSuites(report) {
   const specs = [];
   const walk = (suite, parentTitles) => {
@@ -113,7 +158,16 @@ function extractLatestResult(spec) {
   const duration = typeof lastResult?.duration === 'number' ? lastResult.duration : typeof lastTest?.duration === 'number' ? lastTest.duration : null;
   const error = lastResult?.error || null;
   const attachments = lastResult?.attachments || [];
-  return { status, duration, error, attachments };
+  const annotations = getAnnotations(lastTest, lastResult);
+  return {
+    status,
+    expectedStatus: lastTest?.expectedStatus || null,
+    duration,
+    error,
+    attachments,
+    annotations,
+    startTime: lastResult?.startTime || null
+  };
 }
 
 function inferTarget(filePath) {
@@ -151,7 +205,7 @@ function buildRowsFromReport(report) {
 
   for (const item of flat) {
     const { spec, titlePath } = item;
-    const { status, duration, error, attachments } = extractLatestResult(spec);
+    const { status, expectedStatus, duration, error, attachments, annotations, startTime } = extractLatestResult(spec);
     const loadMs = getMetric(spec, 'loadMs');
     const responseMs = loadMs != null ? loadMs : duration;
     const warningText = getWarning(spec);
@@ -185,7 +239,9 @@ function buildRowsFromReport(report) {
       subtitle: parsed.subtitle || title,
       titlePath,
       status,
-      startedAt: report?.stats?.startTime || null,
+      expectedStatus,
+      annotations,
+      startedAt: startTime || report?.stats?.startTime || null,
       responseMs,
       errorText,
       screenshotPath,
@@ -199,8 +255,8 @@ function buildRowsFromReport(report) {
 
   const order = { failed: 0, timedout: 0, passed: 1, skipped: 2, interrupted: 3 };
   rows.sort((a, b) => {
-    const sa = order[String(a.status || '').toLowerCase()] ?? 9;
-    const sb = order[String(b.status || '').toLowerCase()] ?? 9;
+    const sa = order[classifyStatus(a)] ?? 9;
+    const sb = order[classifyStatus(b)] ?? 9;
     if (sa !== sb) return sa - sb;
     const ca = CATEGORY_ORDER[a.category] ?? 99;
     const cb = CATEGORY_ORDER[b.category] ?? 99;
@@ -263,20 +319,19 @@ function renderSummary(report, rows) {
     return;
   }
 
-  const passed = Number(report?.stats?.passed || 0);
-  const failed = Number(report?.stats?.failed || 0);
-  const skipped = Number(report?.stats?.skipped || 0);
-  const flaky = Number(report?.stats?.flaky || 0);
-  const warnings = rows.filter((r) => r.warning && String(r.status).toLowerCase() === 'passed').length;
+  const summary = summarizeRows(rows);
+  const passed = Number(report?.stats?.expected || 0);
+  const failed = Number(report?.stats?.unexpected || 0);
 
   $('passedCount').textContent = String(passed);
   $('failedCount').textContent = String(failed);
-  $('warningCount').textContent = String(skipped + flaky + warnings);
+  $('warningCount').textContent = String(summary.skipped);
   $('lastRun').textContent = formatDateTime(report?.stats?.startTime);
 
   const total = rows.length;
-  const status = failed ? 'CRITICAL' : skipped + flaky + warnings ? 'WARNING' : 'OK';
+  const status = failed ? 'CRITICAL' : summary.skipped || summary.interrupted || summary.warnings ? 'WARNING' : 'OK';
   const bits = [`${total} tester`, status];
+  if (summary.interrupted) bits.push(`${summary.interrupted} ikke kjørt`);
   if (branch) bits.push(branch);
   if (sha) bits.push(sha);
   $('runMeta').textContent = bits.join(' • ');
@@ -320,8 +375,14 @@ function renderTable(rows) {
     r.setAttribute('role', 'row');
     r.dataset.testId = row.id;
 
-    const pill = statusToPill(row.status, row.warning);
-    const hasError = row.status === 'failed' || row.status === 'timedout';
+    const normalizedStatus = classifyStatus(row);
+    const pill = statusToPill(normalizedStatus, row.warning);
+    const hasError = normalizedStatus === 'failed';
+    const infoText =
+      hasError ? safeText(row.errorText).split('\n')[0].slice(0, 90) :
+      normalizedStatus === 'interrupted' ? 'Ikke kjørt ferdig i denne runden' :
+      row.warning ? safeText(row.warningText).slice(0, 90) :
+      '—';
 
     r.innerHTML = `
       <div class="table__cell" role="cell">
@@ -333,7 +394,7 @@ function renderTable(rows) {
       </div>
       <div class="table__cell mono" role="cell">${formatDateTime(row.startedAt)}</div>
       <div class="table__cell mono" role="cell">${formatMs(row.responseMs)}</div>
-      <div class="table__cell mono" role="cell">${hasError ? safeText(row.errorText).split('\n')[0].slice(0, 90) : row.warning ? safeText(row.warningText).slice(0, 90) : '—'}</div>
+      <div class="table__cell mono" role="cell">${infoText}</div>
     `;
 
     r.addEventListener('click', () => selectRow(row.id));
@@ -349,7 +410,7 @@ function renderSuiteCards(rows) {
 
   for (const suite of suites) {
     const items = rows.filter((row) => row.category === suite);
-    const fails = items.filter((row) => row.status === 'failed' || row.status === 'timedout').length;
+    const fails = items.filter((row) => classifyStatus(row) === 'failed').length;
     const warns = items.filter((row) => row.warning).length;
     const card = document.createElement('div');
     card.className = 'suitecard';
@@ -377,7 +438,7 @@ async function loadQaDetails(pathname) {
 async function renderDetails(row) {
   const errorCard = $('errorCard');
   const empty = $('errorEmpty');
-  if (!row || (row.status !== 'failed' && row.status !== 'timedout')) {
+  if (!row || classifyStatus(row) !== 'failed') {
     errorCard.hidden = true;
     empty.hidden = false;
     $('detailsMeta').textContent = 'Trykk på en feilet test for detaljer';
@@ -512,9 +573,10 @@ function renderHighlights(report, rows) {
   }
 
   const v = safeText(STATE.meta?.runId) || String(Date.now());
-  const firstFailWithShot = rows.find((r) => (r.status === 'failed' || r.status === 'timedout') && r.screenshotPath) || null;
-  const firstFailWithConsole = rows.find((r) => (r.status === 'failed' || r.status === 'timedout') && r.consolePath) || null;
-  const success = Number(report?.stats?.failed || 0) === 0;
+  const summary = summarizeRows(rows);
+  const firstFailWithShot = rows.find((r) => classifyStatus(r) === 'failed' && r.screenshotPath) || null;
+  const firstFailWithConsole = rows.find((r) => classifyStatus(r) === 'failed' && r.consolePath) || null;
+  const success = summary.failed === 0;
 
   const failLink = $('latestFailLink');
   if (firstFailWithShot) {
